@@ -339,26 +339,3 @@ rm -rf .next node_modules
 npm install
 npm run build
 ```
-
-## 📚 Additional Resources
-
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Prisma Documentation](https://www.prisma.io/docs)
-- [Shadcn UI Components](https://ui.shadcn.com/)
-- [Google Gemini API](https://ai.google.dev/)
-
-## 👤 Author
-
-Built as a technical assignment for Full Stack Developer Intern position.
-
-## 📞 Support
-
-For queries, contact: **+91-7700000766 (Akshay Gaur)**
-
-## 📄 License
-
-This project is created for assessment purposes.
-
----
-
-**Happy Coding! 🎉**
