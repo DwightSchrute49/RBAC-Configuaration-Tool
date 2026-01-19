@@ -84,8 +84,77 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { command } = nlCommandSchema.parse(body);
 
-    // Parse command using pattern matching
-    const parsedAction = parseCommand(command);
+    let parsedAction: any = null;
+
+    // Try Gemini AI parsing first if API key is available
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (apiKey) {
+      console.log("🔑 Gemini API key found, attempting AI parsing...");
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [
+                    {
+                      text: `You are an RBAC configuration assistant. Parse this command and return ONLY valid JSON with no additional text.
+
+Available actions:
+1. CREATE_PERMISSION: { "action": "CREATE_PERMISSION", "name": "permission_name", "description": "optional" }
+2. CREATE_ROLE: { "action": "CREATE_ROLE", "name": "role_name" }
+3. ASSIGN_PERMISSION: { "action": "ASSIGN_PERMISSION", "permissionName": "perm", "roleName": "role" }
+4. DELETE_PERMISSION: { "action": "DELETE_PERMISSION", "name": "permission_name" }
+5. DELETE_ROLE: { "action": "DELETE_ROLE", "name": "role_name" }
+
+Command: "${command}"
+
+Return ONLY the JSON object, nothing else.`,
+                    },
+                  ],
+                },
+              ],
+              generationConfig: {
+                temperature: 0.3,
+                maxOutputTokens: 200,
+              },
+            }),
+          },
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (content) {
+            const jsonMatch = content.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              parsedAction = JSON.parse(jsonMatch[0]);
+              console.log("✅ Parsed using Gemini AI:", parsedAction);
+            }
+          }
+        } else {
+          const errorData = await response.json();
+          console.log("❌ Gemini API error:", errorData);
+        }
+      } catch (aiError) {
+        console.log("❌ AI parsing failed, falling back to regex:", aiError);
+      }
+    } else {
+      console.log("⚠️ No Gemini API key found, using regex fallback");
+    }
+
+    // Fallback to regex parsing if AI fails or no API key
+    if (!parsedAction) {
+      parsedAction = parseCommand(command);
+      if (parsedAction) {
+        console.log("✅ Parsed using regex fallback:", parsedAction);
+      }
+    }
 
     if (!parsedAction) {
       return NextResponse.json(
