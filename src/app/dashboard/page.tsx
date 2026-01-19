@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,11 +61,7 @@ export default function DashboardPage() {
   });
   const [roleForm, setRoleForm] = useState({ name: "" });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [permsRes, rolesRes] = await Promise.all([
         fetch("/api/permissions"),
@@ -87,7 +83,11 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
