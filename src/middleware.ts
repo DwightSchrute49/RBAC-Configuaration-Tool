@@ -5,6 +5,12 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
   const isAuthPage = request.nextUrl.pathname.startsWith("/auth");
   const isApiAuth = request.nextUrl.pathname.startsWith("/api/auth");
+  const isRootPath = request.nextUrl.pathname === "/";
+
+  // Allow root path - it will handle its own redirect
+  if (isRootPath) {
+    return NextResponse.next();
+  }
 
   // Allow API auth endpoints
   if (isApiAuth) {
