@@ -6,6 +6,11 @@ export async function isRootOrAdmin(email: string): Promise<boolean> {
     return true;
   }
 
+  // Admin users: emails ending with .admin
+  if (email.endsWith(".admin")) {
+    return true;
+  }
+
   // Check if user has Admin role
   const user = await prisma.user.findUnique({
     where: { email },

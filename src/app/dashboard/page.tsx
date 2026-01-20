@@ -36,15 +36,27 @@ type Role = {
   rolePermissions: { permission: { id: string; name: string } }[];
 };
 
+type User = {
+  id: string;
+  email: string;
+  createdAt: string;
+  userRoles: { role: { id: string; name: string } }[];
+};
+
 export default function DashboardPage() {
   const router = useRouter();
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userEmail, setUserEmail] = useState("");
   const [showPermissionDialog, setShowPermissionDialog] = useState(false);
   const [showRoleDialog, setShowRoleDialog] = useState(false);
   const [showAssignDialog, setShowAssignDialog] = useState(false);
+  const [showUserRolesDialog, setShowUserRolesDialog] = useState(false);
   const [showNLDialog, setShowNLDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUserRoles, setSelectedUserRoles] = useState<string[]>([]);
   const [editingPermission, setEditingPermission] = useState<Permission | null>(
     null,
   );
@@ -63,21 +75,27 @@ export default function DashboardPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [permsRes, rolesRes] = await Promise.all([
+      const [permsRes, rolesRes, usersRes, userRes] = await Promise.all([
         fetch("/api/permissions"),
         fetch("/api/roles"),
+        fetch("/api/users"),
+        fetch("/api/auth/me"),
       ]);
 
-      if (!permsRes.ok || !rolesRes.ok) {
+      if (!permsRes.ok || !rolesRes.ok || !usersRes.ok || !userRes.ok) {
         router.push("/auth/login");
         return;
       }
 
       const permsData = await permsRes.json();
       const rolesData = await rolesRes.json();
+      const usersData = await usersRes.json();
+      const userData = await userRes.json();
 
       setPermissions(permsData.permissions);
       setRoles(rolesData.roles);
+      setUsers(usersData.users);
+      setUserEmail(userData.user?.email || "");
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -103,6 +121,13 @@ export default function DashboardPage() {
         body: JSON.stringify(permissionForm),
       });
 
+      if (res.status === 403) {
+        alert(
+          "🚫 You must be a Root or Admin user to manage roles and permissions.",
+        );
+        return;
+      }
+
       if (res.ok) {
         setShowPermissionDialog(false);
         setPermissionForm({ name: "", description: "" });
@@ -123,6 +148,13 @@ export default function DashboardPage() {
         body: JSON.stringify(permissionForm),
       });
 
+      if (res.status === 403) {
+        alert(
+          "🚫 You must be a Root or Admin user to manage roles and permissions.",
+        );
+        return;
+      }
+
       if (res.ok) {
         setShowPermissionDialog(false);
         setEditingPermission(null);
@@ -138,7 +170,15 @@ export default function DashboardPage() {
     if (!confirm("Are you sure you want to delete this permission?")) return;
 
     try {
-      await fetch(`/api/permissions/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/permissions/${id}`, { method: "DELETE" });
+
+      if (res.status === 403) {
+        alert(
+          "🚫 You must be a Root or Admin user to manage roles and permissions.",
+        );
+        return;
+      }
+
       fetchData();
     } catch (error) {
       console.error("Error deleting permission:", error);
@@ -152,6 +192,13 @@ export default function DashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(roleForm),
       });
+
+      if (res.status === 403) {
+        alert(
+          "🚫 You must be a Root or Admin user to manage roles and permissions.",
+        );
+        return;
+      }
 
       if (res.ok) {
         setShowRoleDialog(false);
@@ -173,6 +220,13 @@ export default function DashboardPage() {
         body: JSON.stringify(roleForm),
       });
 
+      if (res.status === 403) {
+        alert(
+          "🚫 You must be a Root or Admin user to manage roles and permissions.",
+        );
+        return;
+      }
+
       if (res.ok) {
         setShowRoleDialog(false);
         setEditingRole(null);
@@ -188,7 +242,15 @@ export default function DashboardPage() {
     if (!confirm("Are you sure you want to delete this role?")) return;
 
     try {
-      await fetch(`/api/roles/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/roles/${id}`, { method: "DELETE" });
+
+      if (res.status === 403) {
+        alert(
+          "🚫 You must be a Root or Admin user to manage roles and permissions.",
+        );
+        return;
+      }
+
       fetchData();
     } catch (error) {
       console.error("Error deleting role:", error);
@@ -211,6 +273,13 @@ export default function DashboardPage() {
         body: JSON.stringify({ permissionIds: selectedPermissions }),
       });
 
+      if (res.status === 403) {
+        alert(
+          "🚫 You must be a Root or Admin user to manage roles and permissions.",
+        );
+        return;
+      }
+
       if (res.ok) {
         setShowAssignDialog(false);
         setSelectedRole(null);
@@ -219,6 +288,40 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error("Error assigning permissions:", error);
+    }
+  };
+
+  const openUserRolesDialog = (user: User) => {
+    setSelectedUser(user);
+    setSelectedUserRoles(user.userRoles.map((ur) => ur.role.id));
+    setShowUserRolesDialog(true);
+  };
+
+  const handleAssignUserRoles = async () => {
+    if (!selectedUser) return;
+
+    try {
+      const res = await fetch(`/api/users/${selectedUser.id}/roles`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roleIds: selectedUserRoles }),
+      });
+
+      if (res.status === 403) {
+        alert(
+          "🚫 You must be a Root or Admin user to manage roles and permissions.",
+        );
+        return;
+      }
+
+      if (res.ok) {
+        setShowUserRolesDialog(false);
+        setSelectedUser(null);
+        setSelectedUserRoles([]);
+        fetchData();
+      }
+    } catch (error) {
+      console.error("Error assigning user roles:", error);
     }
   };
 
@@ -261,7 +364,10 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">RBAC Configuration Tool</h1>
+          <div>
+            <h1 className="text-2xl font-bold">RBAC Configuration Tool</h1>
+            <p className="text-sm text-gray-600 mt-1">{userEmail}</p>
+          </div>
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -284,6 +390,7 @@ export default function DashboardPage() {
           <TabsList>
             <TabsTrigger value="permissions">Permissions</TabsTrigger>
             <TabsTrigger value="roles">Roles</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
           </TabsList>
 
           <TabsContent value="permissions" className="space-y-4">
@@ -412,6 +519,46 @@ export default function DashboardPage() {
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="users" className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-semibold">Manage Users</h2>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {users.map((user) => (
+                <Card key={user.id}>
+                  <CardHeader>
+                    <CardTitle className="text-base">{user.email}</CardTitle>
+                    <CardDescription>
+                      {user.userRoles.length} role(s) assigned
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-sm text-muted-foreground mb-4">
+                      {user.userRoles.length > 0 ? (
+                        <div>
+                          Roles:{" "}
+                          {user.userRoles.map((ur) => ur.role.name).join(", ")}
+                        </div>
+                      ) : (
+                        <div>No roles assigned</div>
+                      )}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => openUserRolesDialog(user)}
+                    >
+                      <Edit className="h-3 w-3 mr-2" />
+                      Assign Roles
+                    </Button>
                   </CardContent>
                 </Card>
               ))}
@@ -624,6 +771,60 @@ export default function DashboardPage() {
             >
               {nlLoading ? "Processing..." : "Execute"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* User Roles Assignment Dialog */}
+      <Dialog open={showUserRolesDialog} onOpenChange={setShowUserRolesDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Roles to User</DialogTitle>
+            <DialogDescription>
+              Select roles to assign to {selectedUser?.email}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="border rounded-lg p-4 max-h-96 overflow-y-auto">
+              {roles.map((role) => (
+                <div key={role.id} className="flex items-center space-x-2 py-2">
+                  <input
+                    type="checkbox"
+                    id={`user-role-${role.id}`}
+                    checked={selectedUserRoles.includes(role.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedUserRoles([...selectedUserRoles, role.id]);
+                      } else {
+                        setSelectedUserRoles(
+                          selectedUserRoles.filter((id) => id !== role.id),
+                        );
+                      }
+                    }}
+                    className="h-4 w-4"
+                  />
+                  <label
+                    htmlFor={`user-role-${role.id}`}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                  >
+                    {role.name}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowUserRolesDialog(false);
+                setSelectedUser(null);
+                setSelectedUserRoles([]);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleAssignUserRoles}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
