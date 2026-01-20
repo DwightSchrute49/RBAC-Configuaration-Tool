@@ -59,7 +59,10 @@ export async function PUT(
     // Check if user is Root or Admin
     const authorized = await isRootOrAdmin(decoded.email);
     if (!authorized) {
-      return NextResponse.json({ error: "Forbidden: Only Root or Admin users can update roles" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Forbidden: Only Root or Admin users can update roles" },
+        { status: 403 },
+      );
     }
 
     const body = await req.json();
@@ -98,7 +101,10 @@ export async function DELETE(
     // Check if user is Root or Admin
     const authorized = await isRootOrAdmin(decoded.email);
     if (!authorized) {
-      return NextResponse.json({ error: "Forbidden: Only Root or Admin users can delete roles" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Forbidden: Only Root or Admin users can delete roles" },
+        { status: 403 },
+      );
     }
 
     await prisma.role.delete({

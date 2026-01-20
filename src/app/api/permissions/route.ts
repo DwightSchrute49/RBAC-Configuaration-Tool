@@ -50,7 +50,10 @@ export async function POST(req: NextRequest) {
     // Check if user is Root or Admin
     const authorized = await isRootOrAdmin(decoded.email);
     if (!authorized) {
-      return NextResponse.json({ error: "Forbidden: Only Root or Admin users can create permissions" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Forbidden: Only Root or Admin users can create permissions" },
+        { status: 403 },
+      );
     }
 
     const body = await req.json();

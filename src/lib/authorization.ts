@@ -18,9 +18,7 @@ export async function isRootOrAdmin(email: string): Promise<boolean> {
     },
   });
 
-  const hasAdminRole = user?.userRoles.some(
-    (ur) => ur.role.name === "Admin"
-  );
+  const hasAdminRole = user?.userRoles.some((ur) => ur.role.name === "Admin");
 
   return hasAdminRole || false;
 }
