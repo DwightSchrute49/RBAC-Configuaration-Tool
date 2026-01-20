@@ -39,6 +39,22 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Auto-assign Admin role for .admin emails
+    if (email.endsWith(".admin")) {
+      const adminRole = await prisma.role.findUnique({
+        where: { name: "Admin" },
+      });
+
+      if (adminRole) {
+        await prisma.userRole.create({
+          data: {
+            userId: user.id,
+            roleId: adminRole.id,
+          },
+        });
+      }
+    }
+
     // Generate JWT token
     const token = generateToken({ userId: user.id, email: user.email });
 

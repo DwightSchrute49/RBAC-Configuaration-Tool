@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
+import { isRootOrAdmin } from "@/lib/authorization";
 import { z } from "zod";
 
 const assignPermissionSchema = z.object({
@@ -14,8 +15,15 @@ export async function POST(
 ) {
   try {
     const token = req.cookies.get("token")?.value;
-    if (!token || !verifyToken(token)) {
+    const decoded = token ? verifyToken(token) : null;
+    if (!decoded) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check if user is Root or Admin
+    const authorized = await isRootOrAdmin(decoded.email);
+    if (!authorized) {
+      return NextResponse.json({ error: "Forbidden: Only Root or Admin users can assign permissions" }, { status: 403 });
     }
 
     const body = await req.json();
