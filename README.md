@@ -2,6 +2,28 @@
 
 A full-stack Role-Based Access Control (RBAC) management system built with Next.js, TypeScript, Prisma, and PostgreSQL.
 
+## 📖 What is RBAC?
+
+**Role-Based Access Control (RBAC)** is a security model that restricts system access based on user roles. Instead of assigning permissions directly to individual users, you:
+
+1. **Create Permissions** - Define what actions can be performed (e.g., "edit_articles", "delete_users", "view_reports")
+2. **Create Roles** - Define job functions or responsibilities (e.g., "Editor", "Admin", "Viewer")
+3. **Assign Permissions to Roles** - Give each role the permissions it needs (e.g., Editor role gets "edit_articles" permission)
+4. **Assign Roles to Users** - Users inherit all permissions from their assigned roles
+
+**Benefits of RBAC:**
+
+- **Simplified Management**: Change one role instead of updating each user individually
+- **Better Security**: Users only get the permissions they need for their job
+- **Scalability**: Easy to add new users by assigning existing roles
+- **Audit Trail**: Clear understanding of who can do what in the system
+
+**Example:**
+
+- Create a "Content Editor" role with permissions: "create_post", "edit_post", "delete_own_post"
+- Assign this role to all your content team members
+- If you need to add a new permission (e.g., "publish_post"), add it once to the role and all editors automatically get it
+
 ## 🚀 Features
 
 ### Core Features
