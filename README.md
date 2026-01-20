@@ -10,6 +10,10 @@ A full-stack Role-Based Access Control (RBAC) management system built with Next.
   - JWT-based authentication with bcrypt password hashing
   - Secure login/signup with HTTP-only cookies
   - Protected routes with middleware
+  - **Root + IAM Authorization Model**:
+    - **Root Users** (`.root` emails): Full system access
+    - **Admin Users** (`.admin` emails): Can manage roles and permissions
+    - **Regular Users**: Read-only access to dashboard
 
 - **Permission Management**
   - Create, Read, Update, Delete (CRUD) permissions
@@ -25,6 +29,17 @@ A full-stack Role-Based Access Control (RBAC) management system built with Next.
   - Assign multiple permissions to roles
   - Visual interface to see all permissions for a role
   - Easy permission assignment with checkboxes
+
+- **User Management**
+  - View all registered users
+  - Assign roles to users
+  - Track role assignments per user
+
+- **Authorization System**
+  - **Root Users** (emails ending with `.root`): Full administrative access
+  - **Admin Users** (emails ending with `.admin`): Can create/update/delete permissions and roles
+  - **Regular Users**: Can view dashboard but cannot modify permissions or roles
+  - 403 error handling with user-friendly alerts for unauthorized actions
 
 ### 🌟 Bonus Feature: AI Natural Language Configuration
 
@@ -180,19 +195,24 @@ rbac/
 ### Permissions
 
 - `GET /api/permissions` - List all permissions
-- `POST /api/permissions` - Create new permission
+- `POST /api/permissions` - Create new permission **(Root/Admin only)**
 - `GET /api/permissions/[id]` - Get single permission
-- `PUT /api/permissions/[id]` - Update permission
-- `DELETE /api/permissions/[id]` - Delete permission
+- `PUT /api/permissions/[id]` - Update permission **(Root/Admin only)**
+- `DELETE /api/permissions/[id]` - Delete permission **(Root/Admin only)**
 
 ### Roles
 
 - `GET /api/roles` - List all roles
-- `POST /api/roles` - Create new role
+- `POST /api/roles` - Create new role **(Root/Admin only)**
 - `GET /api/roles/[id]` - Get single role
-- `PUT /api/roles/[id]` - Update role
-- `DELETE /api/roles/[id]` - Delete role
-- `POST /api/roles/[id]/permissions` - Assign permissions to role
+- `PUT /api/roles/[id]` - Update role **(Root/Admin only)**
+- `DELETE /api/roles/[id]` - Delete role **(Root/Admin only)**
+- `POST /api/roles/[id]/permissions` - Assign permissions to role **(Root/Admin only)**
+
+### Users
+
+- `GET /api/users` - List all users with their roles
+- `POST /api/users/[id]/roles` - Assign roles to user **(Root/Admin only)**
 
 ### AI Natural Language
 
@@ -202,11 +222,21 @@ rbac/
 
 ### 1. Create an Account
 
-1. Navigate to `/auth/signup`
-2. Enter your email and password
-3. Click "Sign Up"
+1. Navigate to the landing page
+2. Click "Sign Up"
+3. Enter your email and password
+   - **For Admin Access**: Use an email ending with `.admin` (e.g., `admin@company.admin`)
+   - **For Root Access**: Use an email ending with `.root` (e.g., `superuser@company.root`)
+   - **Regular User**: Any other email format
+4. Click "Sign Up"
 
-### 2. Manage Permissions
+**Authorization Levels:**
+
+- **Root Users** (`.root`): Full system access, can manage everything
+- **Admin Users** (`.admin`): Can create, update, and delete permissions and roles
+- **Regular Users**: Can view the dashboard but cannot modify permissions or roles
+
+### 2. Manage Permissions (Root/Admin Only)
 
 1. Go to the Dashboard → Permissions tab
 2. Click "New Permission"
@@ -214,27 +244,39 @@ rbac/
 4. Add an optional description
 5. Click "Create"
 
-### 3. Manage Roles
+**Note**: Only users with `.root` or `.admin` emails can create, edit, or delete permissions.
+
+### 3. Manage Roles (Root/Admin Only)
 
 1. Go to the Dashboard → Roles tab
 2. Click "New Role"
 3. Enter role name (e.g., `Content Editor`)
 4. Click "Create"
 
-### 4. Assign Permissions to Roles
+**Note**: Only users with `.root` or `.admin` emails can create, edit, or delete roles.
+
+### 4. Assign Permissions to Roles (Root/Admin Only)
 
 1. In the Roles tab, find your role
 2. Click "Assign"
 3. Check the permissions you want to assign
 4. Click "Assign"
 
-### 5. Use AI Natural Language Commands
+### 5. Manage Users (All Users Can View)
+
+1. Go to the Dashboard → Users tab
+2. View all registered users and their assigned roles
+3. **Root/Admin Only**: Click "Assign Roles" to modify user role assignments
+
+### 5. Use AI Natural Language Commands (Root/Admin Only)
 
 1. Click the "AI Command" button
 2. Type a command like:
    - "Create a new permission called manage users"
    - "Assign the edit articles permission to Content Editor role"
 3. Click "Execute"
+
+**Note**: AI commands that create or modify permissions/roles require Root or Admin access.
 
 ## 🚀 Deployment to Vercel
 
@@ -277,17 +319,39 @@ npx prisma migrate deploy
 
 ### Manual Testing Checklist
 
-- [ ] Sign up with a new account
+**Authentication:**
+
+- [ ] Sign up with a regular account
+- [ ] Sign up with `.admin` email (e.g., `test.admin`)
+- [ ] Sign up with `.root` email (e.g., `test.root`)
 - [ ] Login with existing account
-- [ ] Create a permission
-- [ ] Edit a permission
-- [ ] Delete a permission
-- [ ] Create a role
-- [ ] Edit a role
-- [ ] Assign permissions to role
-- [ ] Delete a role
-- [ ] Test AI natural language command
 - [ ] Logout
+
+**Permissions (Root/Admin Only):**
+
+- [ ] Create a permission as Admin/Root user
+- [ ] Edit a permission as Admin/Root user
+- [ ] Delete a permission as Admin/Root user
+- [ ] Try to create permission as regular user (should show 403 error)
+
+**Roles (Root/Admin Only):**
+
+- [ ] Create a role as Admin/Root user
+- [ ] Edit a role as Admin/Root user
+- [ ] Assign permissions to role as Admin/Root user
+- [ ] Delete a role as Admin/Root user
+- [ ] Try to create role as regular user (should show 403 error)
+
+**Users:**
+
+- [ ] View all users in Users tab
+- [ ] Assign roles to user as Admin/Root
+- [ ] Try to assign roles as regular user (should show 403 error)
+
+**AI Features:**
+
+- [ ] Test AI natural language command as Admin/Root
+- [ ] Verify commands execute successfully
 
 ## 🔒 Security Features
 
