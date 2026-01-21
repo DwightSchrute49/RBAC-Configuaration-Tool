@@ -5,7 +5,7 @@ A full-stack Role-Based Access Control (RBAC) management system built with Next.
 ## � Quick Links
 
 - **📦 GitHub Repository:** [https://github.com/DwightSchrute49/RBAC-Configuaration-Tool](https://github.com/DwightSchrute49/RBAC-Configuaration-Tool)
-- **🌐 Live Demo:** [Add your deployed URL here]
+- **🌐 Live Demo:** https://rbac-configuaration-tool-haqe.vercel.app/
 - **🔐 Test Credentials:**
   - Email: `admin@example.admin`
   - Password: `admin123`
