@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -22,27 +21,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Trash2, Edit, Plus, LogOut, Sparkles } from "lucide-react";
-
 type Permission = {
   id: string;
   name: string;
   description: string | null;
   rolePermissions: { role: { id: string; name: string } }[];
 };
-
 type Role = {
   id: string;
   name: string;
   rolePermissions: { permission: { id: string; name: string } }[];
 };
-
 type User = {
   id: string;
   email: string;
   createdAt: string;
   userRoles: { role: { id: string; name: string } }[];
 };
-
 export default function DashboardPage() {
   const router = useRouter();
   const [permissions, setPermissions] = useState<Permission[]>([]);
@@ -66,13 +61,11 @@ export default function DashboardPage() {
   const [nlCommand, setNlCommand] = useState("");
   const [nlLoading, setNlLoading] = useState(false);
   const [nlResult, setNlResult] = useState("");
-
   const [permissionForm, setPermissionForm] = useState({
     name: "",
     description: "",
   });
   const [roleForm, setRoleForm] = useState({ name: "" });
-
   const fetchData = useCallback(async () => {
     try {
       const [permsRes, rolesRes, usersRes, userRes] = await Promise.all([
@@ -81,17 +74,14 @@ export default function DashboardPage() {
         fetch("/api/users"),
         fetch("/api/auth/me"),
       ]);
-
       if (!permsRes.ok || !rolesRes.ok || !usersRes.ok || !userRes.ok) {
         router.push("/auth/login");
         return;
       }
-
       const permsData = await permsRes.json();
       const rolesData = await rolesRes.json();
       const usersData = await usersRes.json();
       const userData = await userRes.json();
-
       setPermissions(permsData.permissions);
       setRoles(rolesData.roles);
       setUsers(usersData.users);
@@ -102,17 +92,14 @@ export default function DashboardPage() {
       setLoading(false);
     }
   }, []);
-
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/auth/login");
     router.refresh();
   };
-
   const handleCreatePermission = async () => {
     try {
       const res = await fetch("/api/permissions", {
@@ -120,14 +107,12 @@ export default function DashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(permissionForm),
       });
-
       if (res.status === 403) {
         alert(
           "🚫 You must be a Root or Admin user to manage roles and permissions.",
         );
         return;
       }
-
       if (res.ok) {
         setShowPermissionDialog(false);
         setPermissionForm({ name: "", description: "" });
@@ -137,24 +122,20 @@ export default function DashboardPage() {
       console.error("Error creating permission:", error);
     }
   };
-
   const handleUpdatePermission = async () => {
     if (!editingPermission) return;
-
     try {
       const res = await fetch(`/api/permissions/${editingPermission.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(permissionForm),
       });
-
       if (res.status === 403) {
         alert(
           "🚫 You must be a Root or Admin user to manage roles and permissions.",
         );
         return;
       }
-
       if (res.ok) {
         setShowPermissionDialog(false);
         setEditingPermission(null);
@@ -165,26 +146,21 @@ export default function DashboardPage() {
       console.error("Error updating permission:", error);
     }
   };
-
   const handleDeletePermission = async (id: string) => {
     if (!confirm("Are you sure you want to delete this permission?")) return;
-
     try {
       const res = await fetch(`/api/permissions/${id}`, { method: "DELETE" });
-
       if (res.status === 403) {
         alert(
-          "🚫 You must be a Root or Admin user to manage roles and permissions.",
+          "You must be a Root or Admin user to manage roles and permissions.",
         );
         return;
       }
-
       fetchData();
     } catch (error) {
       console.error("Error deleting permission:", error);
     }
   };
-
   const handleCreateRole = async () => {
     try {
       const res = await fetch("/api/roles", {
@@ -192,14 +168,12 @@ export default function DashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(roleForm),
       });
-
       if (res.status === 403) {
         alert(
           "🚫 You must be a Root or Admin user to manage roles and permissions.",
         );
         return;
       }
-
       if (res.ok) {
         setShowRoleDialog(false);
         setRoleForm({ name: "" });
@@ -209,24 +183,20 @@ export default function DashboardPage() {
       console.error("Error creating role:", error);
     }
   };
-
   const handleUpdateRole = async () => {
     if (!editingRole) return;
-
     try {
       const res = await fetch(`/api/roles/${editingRole.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(roleForm),
       });
-
       if (res.status === 403) {
         alert(
-          "🚫 You must be a Root or Admin user to manage roles and permissions.",
+          "You must be a Root or Admin user to manage roles and permissions.",
         );
         return;
       }
-
       if (res.ok) {
         setShowRoleDialog(false);
         setEditingRole(null);
@@ -237,49 +207,40 @@ export default function DashboardPage() {
       console.error("Error updating role:", error);
     }
   };
-
   const handleDeleteRole = async (id: string) => {
     if (!confirm("Are you sure you want to delete this role?")) return;
-
     try {
       const res = await fetch(`/api/roles/${id}`, { method: "DELETE" });
-
       if (res.status === 403) {
         alert(
-          "🚫 You must be a Root or Admin user to manage roles and permissions.",
+          "You must be a Root or Admin user to manage roles and permissions.",
         );
         return;
       }
-
       fetchData();
     } catch (error) {
       console.error("Error deleting role:", error);
     }
   };
-
   const openAssignDialog = (role: Role) => {
     setSelectedRole(role);
     setSelectedPermissions(role.rolePermissions.map((rp) => rp.permission.id));
     setShowAssignDialog(true);
   };
-
   const handleAssignPermissions = async () => {
     if (!selectedRole) return;
-
     try {
       const res = await fetch(`/api/roles/${selectedRole.id}/permissions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ permissionIds: selectedPermissions }),
       });
-
       if (res.status === 403) {
         alert(
-          "🚫 You must be a Root or Admin user to manage roles and permissions.",
+          "You must be a Root or Admin user to manage roles and permissions.",
         );
         return;
       }
-
       if (res.ok) {
         setShowAssignDialog(false);
         setSelectedRole(null);
@@ -290,30 +251,25 @@ export default function DashboardPage() {
       console.error("Error assigning permissions:", error);
     }
   };
-
   const openUserRolesDialog = (user: User) => {
     setSelectedUser(user);
     setSelectedUserRoles(user.userRoles.map((ur) => ur.role.id));
     setShowUserRolesDialog(true);
   };
-
   const handleAssignUserRoles = async () => {
     if (!selectedUser) return;
-
     try {
       const res = await fetch(`/api/users/${selectedUser.id}/roles`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ roleIds: selectedUserRoles }),
       });
-
       if (res.status === 403) {
         alert(
-          "🚫 You must be a Root or Admin user to manage roles and permissions.",
+          "You must be a Root or Admin user to manage roles and permissions.",
         );
         return;
       }
-
       if (res.ok) {
         setShowUserRolesDialog(false);
         setSelectedUser(null);
@@ -324,20 +280,16 @@ export default function DashboardPage() {
       console.error("Error assigning user roles:", error);
     }
   };
-
   const handleNLCommand = async () => {
     setNlLoading(true);
     setNlResult("");
-
     try {
       const res = await fetch("/api/nl-command", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ command: nlCommand }),
       });
-
       const data = await res.json();
-
       if (res.ok) {
         setNlResult(`✓ Success: ${JSON.stringify(data.action, null, 2)}`);
         setNlCommand("");
@@ -351,7 +303,6 @@ export default function DashboardPage() {
       setNlLoading(false);
     }
   };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -359,7 +310,6 @@ export default function DashboardPage() {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b">
@@ -384,7 +334,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </header>
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="permissions" className="space-y-4">
           <TabsList>
@@ -392,7 +341,6 @@ export default function DashboardPage() {
             <TabsTrigger value="roles">Roles</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
           </TabsList>
-
           <TabsContent value="permissions" className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold">Manage Permissions</h2>
@@ -407,7 +355,6 @@ export default function DashboardPage() {
                 New Permission
               </Button>
             </div>
-
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {permissions.map((permission) => (
                 <Card key={permission.id}>
@@ -451,7 +398,6 @@ export default function DashboardPage() {
               ))}
             </div>
           </TabsContent>
-
           <TabsContent value="roles" className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold">Manage Roles</h2>
@@ -466,7 +412,6 @@ export default function DashboardPage() {
                 New Role
               </Button>
             </div>
-
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {roles.map((role) => (
                 <Card key={role.id}>
@@ -524,12 +469,10 @@ export default function DashboardPage() {
               ))}
             </div>
           </TabsContent>
-
           <TabsContent value="users" className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold">Manage Users</h2>
             </div>
-
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {users.map((user) => (
                 <Card key={user.id}>
@@ -566,7 +509,6 @@ export default function DashboardPage() {
           </TabsContent>
         </Tabs>
       </main>
-
       {/* Permission Dialog */}
       <Dialog
         open={showPermissionDialog}
@@ -629,7 +571,6 @@ export default function DashboardPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Role Dialog */}
       <Dialog open={showRoleDialog} onOpenChange={setShowRoleDialog}>
         <DialogContent>
@@ -662,7 +603,6 @@ export default function DashboardPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Assign Permissions Dialog */}
       <Dialog open={showAssignDialog} onOpenChange={setShowAssignDialog}>
         <DialogContent>
@@ -719,7 +659,6 @@ export default function DashboardPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Natural Language Dialog */}
       <Dialog open={showNLDialog} onOpenChange={setShowNLDialog}>
         <DialogContent>
@@ -774,7 +713,6 @@ export default function DashboardPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* User Roles Assignment Dialog */}
       <Dialog open={showUserRolesDialog} onOpenChange={setShowUserRolesDialog}>
         <DialogContent>

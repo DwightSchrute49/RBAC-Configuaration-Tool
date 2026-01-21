@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
-
-// GET all users with their roles
 export async function GET(req: NextRequest) {
   try {
     const token = req.cookies.get("token")?.value;
     if (!token || !verifyToken(token)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
     const users = await prisma.user.findMany({
       orderBy: { createdAt: "desc" },
       select: {
@@ -23,7 +20,6 @@ export async function GET(req: NextRequest) {
         },
       },
     });
-
     return NextResponse.json({ users }, { status: 200 });
   } catch (error) {
     console.error("Get users error:", error);

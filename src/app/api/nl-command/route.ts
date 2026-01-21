@@ -2,16 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
 import { z } from "zod";
-
 const nlCommandSchema = z.object({
   command: z.string().min(1),
 });
-
-// Simple pattern matching parser (AI-free fallback)
 function parseCommand(command: string): any {
   const lowerCmd = command.toLowerCase();
-
-  // CREATE PERMISSION patterns
   if (lowerCmd.includes("create") && lowerCmd.includes("permission")) {
     const nameMatch =
       command.match(/(?:called|named)\s+["']?([a-z_]+)["']?/i) ||
@@ -19,7 +14,6 @@ function parseCommand(command: string): any {
     const descMatch = command.match(
       /(?:description|with)\s+["']([^"']+)["']?/i,
     );
-
     if (nameMatch) {
       return {
         action: "CREATE_PERMISSION",
@@ -28,8 +22,6 @@ function parseCommand(command: string): any {
       };
     }
   }
-
-  // CREATE ROLE patterns
   if (lowerCmd.includes("create") && lowerCmd.includes("role")) {
     const nameMatch =
       command.match(/(?:called|named)\s+["']?([a-z_]+)["']?/i) ||
@@ -38,8 +30,6 @@ function parseCommand(command: string): any {
       return { action: "CREATE_ROLE", name: nameMatch[1] };
     }
   }
-
-  // ASSIGN PERMISSION patterns
   if (
     lowerCmd.includes("assign") ||
     (lowerCmd.includes("give") && lowerCmd.includes("permission"))
@@ -54,45 +44,35 @@ function parseCommand(command: string): any {
       };
     }
   }
-
-  // DELETE PERMISSION patterns
   if (lowerCmd.includes("delete") && lowerCmd.includes("permission")) {
     const nameMatch = command.match(/permission\s+["']?([a-z_]+)["']?/i);
     if (nameMatch) {
       return { action: "DELETE_PERMISSION", name: nameMatch[1] };
     }
   }
-
-  // DELETE ROLE patterns
   if (lowerCmd.includes("delete") && lowerCmd.includes("role")) {
     const nameMatch = command.match(/role\s+["']?([a-z_]+)["']?/i);
     if (nameMatch) {
       return { action: "DELETE_ROLE", name: nameMatch[1] };
     }
   }
-
   return null;
 }
-
 export async function POST(req: NextRequest) {
   try {
     const token = req.cookies.get("token")?.value;
     if (!token || !verifyToken(token)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
     const body = await req.json();
     const { command } = nlCommandSchema.parse(body);
-
     let parsedAction: any = null;
-
-    // Try Gemini AI parsing first if API key is available
     const apiKey = process.env.GEMINI_API_KEY;
     if (apiKey) {
       console.log("🔑 Gemini API key found, attempting AI parsing...");
       try {
         const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
           {
             method: "POST",
             headers: {
@@ -104,16 +84,13 @@ export async function POST(req: NextRequest) {
                   parts: [
                     {
                       text: `You are an RBAC configuration assistant. Parse this command and return ONLY valid JSON with no additional text.
-
 Available actions:
 1. CREATE_PERMISSION: { "action": "CREATE_PERMISSION", "name": "permission_name", "description": "optional" }
 2. CREATE_ROLE: { "action": "CREATE_ROLE", "name": "role_name" }
 3. ASSIGN_PERMISSION: { "action": "ASSIGN_PERMISSION", "permissionName": "perm", "roleName": "role" }
 4. DELETE_PERMISSION: { "action": "DELETE_PERMISSION", "name": "permission_name" }
 5. DELETE_ROLE: { "action": "DELETE_ROLE", "name": "role_name" }
-
 Command: "${command}"
-
 Return ONLY the JSON object, nothing else.`,
                     },
                   ],
@@ -126,7 +103,6 @@ Return ONLY the JSON object, nothing else.`,
             }),
           },
         );
-
         if (response.ok) {
           const data = await response.json();
           const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -147,15 +123,12 @@ Return ONLY the JSON object, nothing else.`,
     } else {
       console.log("⚠️ No Gemini API key found, using regex fallback");
     }
-
-    // Fallback to regex parsing if AI fails or no API key
     if (!parsedAction) {
       parsedAction = parseCommand(command);
       if (parsedAction) {
         console.log("✅ Parsed using regex fallback:", parsedAction);
       }
     }
-
     if (!parsedAction) {
       return NextResponse.json(
         {
@@ -165,10 +138,7 @@ Return ONLY the JSON object, nothing else.`,
         { status: 400 },
       );
     }
-
-    // Execute the parsed action
     let result: any = null;
-
     switch (parsedAction.action) {
       case "CREATE_PERMISSION":
         const existingPerm = await prisma.permission.findUnique({
@@ -187,7 +157,6 @@ Return ONLY the JSON object, nothing else.`,
           },
         });
         break;
-
       case "CREATE_ROLE":
         const existingRole = await prisma.role.findUnique({
           where: { name: parsedAction.name },
@@ -202,7 +171,6 @@ Return ONLY the JSON object, nothing else.`,
           data: { name: parsedAction.name },
         });
         break;
-
       case "ASSIGN_PERMISSION":
         const role = await prisma.role.findUnique({
           where: { name: parsedAction.roleName },
@@ -210,14 +178,12 @@ Return ONLY the JSON object, nothing else.`,
         const permission = await prisma.permission.findUnique({
           where: { name: parsedAction.permissionName },
         });
-
         if (!role || !permission) {
           return NextResponse.json(
             { error: "Role or permission not found" },
             { status: 404 },
           );
         }
-
         const existing = await prisma.rolePermission.findUnique({
           where: {
             roleId_permissionId: {
@@ -226,14 +192,12 @@ Return ONLY the JSON object, nothing else.`,
             },
           },
         });
-
         if (existing) {
           return NextResponse.json(
             { error: "Permission already assigned to role" },
             { status: 400 },
           );
         }
-
         result = await prisma.rolePermission.create({
           data: {
             roleId: role.id,
@@ -241,7 +205,6 @@ Return ONLY the JSON object, nothing else.`,
           },
         });
         break;
-
       case "DELETE_PERMISSION":
         const permToDelete = await prisma.permission.findUnique({
           where: { name: parsedAction.name },
@@ -251,7 +214,6 @@ Return ONLY the JSON object, nothing else.`,
           result = { deleted: true };
         }
         break;
-
       case "DELETE_ROLE":
         const roleToDelete = await prisma.role.findUnique({
           where: { name: parsedAction.name },
@@ -261,11 +223,9 @@ Return ONLY the JSON object, nothing else.`,
           result = { deleted: true };
         }
         break;
-
       default:
         return NextResponse.json({ error: "Unknown action" }, { status: 400 });
     }
-
     return NextResponse.json({
       success: true,
       action: parsedAction,

@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -14,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
 export default function SignupPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -22,37 +20,29 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
-
     if (password.length < 6) {
       setError("Password must be at least 6 characters");
       return;
     }
-
     setLoading(true);
-
     try {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-
       const data = await res.json();
-
       if (!res.ok) {
         setError(data.error || "Signup failed");
         return;
       }
-
       router.push("/dashboard");
       router.refresh();
     } catch (err) {
@@ -61,7 +51,6 @@ export default function SignupPage() {
       setLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <Card className="w-full max-w-md">

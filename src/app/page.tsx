@@ -1,28 +1,22 @@
 "use client";
-
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Shield, Lock, Users } from "lucide-react";
 import { useEffect, useState } from "react";
-
 export default function Home() {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-
   useEffect(() => {
-    // Check if user is logged in
     fetch("/api/auth/me")
       .then((res) => setIsLoggedIn(res.ok))
       .catch(() => setIsLoggedIn(false));
   }, []);
-
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     setIsLoggedIn(false);
     router.refresh();
   };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center p-4">
       <div className="max-w-4xl mx-auto text-center space-y-8">
@@ -39,7 +33,6 @@ export default function Home() {
             assign permissions, and manage users with ease.
           </p>
         </div>
-
         {/* Features */}
         <div className="grid md:grid-cols-3 gap-6 my-12">
           <div className="bg-white p-6 rounded-lg shadow-md">
@@ -64,7 +57,6 @@ export default function Home() {
             </p>
           </div>
         </div>
-
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           {isLoggedIn ? (
@@ -98,11 +90,6 @@ export default function Home() {
             </>
           )}
         </div>
-
-        {/* Footer */}
-        <p className="text-sm text-gray-500 mt-8">
-          Built with Next.js, TypeScript, Prisma, and PostgreSQL
-        </p>
       </div>
     </div>
   );
