@@ -2,7 +2,19 @@
 
 A full-stack Role-Based Access Control (RBAC) management system built with Next.js, TypeScript, Prisma, and PostgreSQL.
 
-## 📖 What is RBAC?
+## � Quick Links
+
+- **📦 GitHub Repository:** [https://github.com/DwightSchrute49/RBAC-Configuaration-Tool](https://github.com/DwightSchrute49/RBAC-Configuaration-Tool)
+- **🌐 Live Demo:** [Add your deployed URL here]
+- **🔐 Test Credentials:**
+  - Email: `admin@example.admin`
+  - Password: `admin123`
+
+## RBAC Explained Simply (For a Kid)
+
+Think of RBAC like a video game! In a school wheree teachers can give homework and grades (they have the "teacher" role). Students can only submit homework (they have the "student" role). The principal can do everything (they have the "principal" role). Everyone gets different "powers" based on their role!
+
+## What is RBAC?
 
 **Role-Based Access Control (RBAC)** is a security model that restricts system access based on user roles. Instead of assigning permissions directly to individual users, you:
 
